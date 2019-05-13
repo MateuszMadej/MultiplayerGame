@@ -17,8 +17,8 @@ class Ball():
         self.ball_color = ball_color
         self.radius = radius
 
-host = "" #ip addr here
-port = 8888
+host = "192.168.1.3" #ip addr here
+port = 8889
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket created
 
 # bind socket to local host and port

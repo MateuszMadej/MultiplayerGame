@@ -1,16 +1,20 @@
-import pygame, sys, socket, pickle, os
+import pygame, sys, socket, pickle, os, time
 from pygame.locals import * #imports additional pygame modules
 
 pygame.init()
 screen_width=600
 screen_height=800
-host = "" # server ip addr here
-port = 8888
+host = "192.168.1.3" # server ip addr here
+port = 8889
 screen = pygame.display.set_mode((screen_width, screen_height))
+
+clock = pygame.time.Clock()
 
 #img
 bg = pygame.image.load(os.path.join("img", "backGame.jpg"))
 bg = pygame.transform.scale(bg, (screen_width, screen_height)) #resize bg to screen resolution
+logo = pygame.image.load(os.path.join("img", "air-hockey.png"))
+logo = pygame.transform.scale(logo, (180, 180))
 player = pygame.image.load(os.path.join("img", "player1.png"))
 player = pygame.transform.scale(player, (50, 50))
 player2 = pygame.image.load(os.path.join("img", "player2.png"))
@@ -95,6 +99,53 @@ class ServerActions: # connecting to server and sending, receiving data
 def collisionPlayerPuck(playerObject, puckObject):
     pass
 
+
+def startScreen():
+    start = True
+
+    while start:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    start = False
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+
+        screen.fill((22,62,115))
+        screen.blit(logo, ((screen_width / 2)-90,(screen_height / 2)-40))
+        message_to_screen("AirHockey!",(255,255,255),-100,"large")
+        message_to_screen("Wciśnij C, aby rozpocząć nową grę lub Q, aby wyjść!",(255,255,255),180)
+        pygame.display.update()
+        clock.tick(15)
+
+
+def text_objects(text, color, size):
+    smallfont = pygame.font.SysFont("comicsansms", 25)
+    medfont = pygame.font.SysFont("comicsansms", 50)
+    largefont = pygame.font.SysFont("comicsansms", 80)
+
+    if size == "small":
+        textSurface = smallfont.render(text, True, color)
+    elif size == "medium":
+        textSurface = medfont.render(text, True, color)
+    elif size == "large":
+        textSurface = largefont.render(text, True, color)
+
+    return textSurface, textSurface.get_rect()
+
+
+
+def message_to_screen(msg,color, y_displace=0, size = "small"):
+    textSurf, textRect = text_objects(msg,color, size)
+    textRect.center = (screen_width / 2), (screen_height / 2)+y_displace
+    screen.blit(textSurf, textRect)
+
+
+
 def main():
     ball = Ball(300, 400, (255,0,0), 15) #only for test (will be move to the server)
     sa = ServerActions(port, host)
@@ -123,4 +174,5 @@ def main():
         #print(player.x, player.y)
         #print(ball.x, ball.y)
 
+startScreen()
 main()
