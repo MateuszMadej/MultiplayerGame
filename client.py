@@ -1,10 +1,10 @@
-import pygame, sys, socket, pickle, os, time
+import pygame, sys, socket, pickle, os, time, random
 from pygame.locals import * #imports additional pygame modules
 
 pygame.init()
 screen_width=600
 screen_height=800
-host = "192.168.1.3" # server ip addr here
+host = "" # server ip addr here
 port = 8889
 screen = pygame.display.set_mode((screen_width, screen_height))
 
@@ -41,17 +41,17 @@ class Player():
         keys = pygame.key.get_pressed()
 
         #sterowanie strzalki/wsad + kolizja gracz - sciana (rowniez gracz nie moze przekroczyc srodka boiska)
-        if keys[pygame.K_d] or keys[pygame.K_RIGHT] and self.x < screen_width - self.radius - 15:
+        if keys[pygame.K_RIGHT] and self.x < screen_width - self.radius - 15:
             self.x += speed
-        if keys[pygame.K_a] or keys[pygame.K_LEFT] and self.x > 0 + self.radius + 15:
+        if keys[pygame.K_LEFT] and self.x > 0 + self.radius + 15:
             self.x -= speed
-        if keys[pygame.K_s] or keys[pygame.K_DOWN] and self.y < screen_height/2 - self.radius and self.id == 0:
+        if keys[pygame.K_DOWN] and self.y < screen_height/2 - self.radius and self.id == 0:
             self.y += speed
-        if keys[pygame.K_s] or keys[pygame.K_DOWN] and self.y < screen_height - self.radius - 15 and self.id == 1:
+        if keys[pygame.K_DOWN] and self.y < screen_height - self.radius - 15 and self.id == 1:
             self.y += speed
-        if keys[pygame.K_w] or keys[pygame.K_UP] and self.y > 0 + self.radius + 15 and self.id == 0:
+        if keys[pygame.K_UP] and self.y > 0 + self.radius + 15 and self.id == 0:
             self.y -= speed
-        if keys[pygame.K_w] or keys[pygame.K_UP] and self.y > screen_height/2 + self.radius and self.id == 1:
+        if keys[pygame.K_UP] and self.y > screen_height/2 + self.radius and self.id == 1:
             self.y -= speed
 
 class Ball():
@@ -65,14 +65,14 @@ class Ball():
         #pygame.draw.circle(screen, self.ball_color, (self.x, self.y), self.radius) #zostawic dla testow kolizji
         screen.blit(puck, (self.x - self.radius, self.y - self.radius))
 
-    def move(self, change_direction): # automatic movement
+    def move(self, change_direction, speed): # automatic movement
         #test
-        if change_direction == 1:
-            self.y += 1
-        elif change_direction == 2:
-            self.y -= 1
+        if change_direction == 0:
+            self.y += speed
+        elif change_direction == 1:
+            self.y -= speed
 
-        #later more directions
+        #later more directions etc.
 
 class ServerActions: # connecting to server and sending, receiving data
     def __init__(self, port, host):
@@ -86,8 +86,11 @@ class ServerActions: # connecting to server and sending, receiving data
         return self.p #return connected players starting position
 
     def connect(self):
-        self.client.connect(self.addr)
+        self.client.connect(self.addr) #first connect to server
         return pickle.loads(self.client.recv(2048)) #Read a pickled object hierarchy from a string
+
+    def justGet(self): #only used if we are connected
+        return pickle.loads(self.client.recv(2048))
 
     def send(self, data):
         try:
@@ -98,7 +101,6 @@ class ServerActions: # connecting to server and sending, receiving data
 
 def collisionPlayerPuck(playerObject, puckObject):
     pass
-
 
 def startScreen():
     start = True
@@ -122,7 +124,6 @@ def startScreen():
         pygame.display.update()
         clock.tick(15)
 
-
 def text_objects(text, color, size):
     smallfont = pygame.font.SysFont("comicsansms", 25)
     medfont = pygame.font.SysFont("comicsansms", 50)
@@ -138,21 +139,19 @@ def text_objects(text, color, size):
     return textSurface, textSurface.get_rect()
 
 
-
 def message_to_screen(msg,color, y_displace=0, size = "small"):
     textSurf, textRect = text_objects(msg,color, size)
     textRect.center = (screen_width / 2), (screen_height / 2)+y_displace
     screen.blit(textSurf, textRect)
 
-
-
 def main():
-    ball = Ball(300, 400, (255,0,0), 15) #only for test (will be move to the server)
     sa = ServerActions(port, host)
-    player = sa.getP()
+    player = sa.getP() #connect and get player starting position
+    ball = sa.justGet() #just get ball starting position
 
     while True:
         player2 = sa.send(player)
+        ball = sa.send(ball)
 
         # handle events
         for event in pygame.event.get(): # checking all events
@@ -162,17 +161,18 @@ def main():
                 sys.exit(0)
 
         player.move(2)
-        ball.move(1)
+        ball.move(1, 5)
 
         # drawing
         screen.blit(bg, (0, 0))
-        ball.draw(screen)
         player.draw(screen)
         player2.draw(screen)
+        ball.draw(screen) #draw only one ball, ignore 1 of 2 ball objects
+        clock.tick(60) #fps
         pygame.display.flip()
 
-        #print(player.x, player.y)
-        #print(ball.x, ball.y)
+        #print("player obj",player)
+        #print("ball obj", ball)
 
 startScreen()
 main()
