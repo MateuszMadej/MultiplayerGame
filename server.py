@@ -17,7 +17,7 @@ class Ball():
         self.ball_color = ball_color
         self.radius = radius
 
-host = "" #ip addr here
+host = "localhost" #ip addr here
 port = 8889
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # socket created
 
@@ -31,8 +31,8 @@ except socket.error as msg:
 # start listening on socket
 s.listen(2) # for only 2 connections
 print("Socket now listening.")
-players = [Player(300,50,(255,255,0),25, 0), Player(300,750,(0,255,0),25, 1)] #two players starting position
-balls = [Ball(300, 400, (255, 0, 0), 15), Ball(300, 400, (255, 0, 0), 15)]
+players = [Player(100,300,(255,255,0),25, 0), Player(1180,300,(0,255,0),25, 1)] #two players starting position
+balls = [Ball(640, 300, (255, 0, 0), 15), Ball(640, 300, (255, 0, 0), 15)]
 
 def client_thread(conn, player):
     #ball = Ball(300, 400, (255, 0, 0), 15)  # ball object on server (starting position)

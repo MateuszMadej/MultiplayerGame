@@ -2,17 +2,17 @@ import pygame, sys, socket, pickle, os, time, random
 from pygame.locals import * #imports additional pygame modules
 
 pygame.init()
-screen_width=600
-screen_height=800
-host = "" # server ip addr here
+screen_width=1280
+screen_height=600
+host = "localhost" # server ip addr here
 port = 8889
 screen = pygame.display.set_mode((screen_width, screen_height))
 
 clock = pygame.time.Clock()
 
 #img
-bg = pygame.image.load(os.path.join("img", "backGame.jpg"))
-bg = pygame.transform.scale(bg, (screen_width, screen_height)) #resize bg to screen resolution
+bg = pygame.image.load(os.path.join("img", "bg.jpg"))
+bg = pygame.transform.scale(bg,(screen_width, screen_height))#resize bg to screen resolution
 logo = pygame.image.load(os.path.join("img", "air-hockey.png"))
 logo = pygame.transform.scale(logo, (180, 180))
 player = pygame.image.load(os.path.join("img", "player1.png"))
@@ -41,17 +41,21 @@ class Player():
         keys = pygame.key.get_pressed()
 
         #sterowanie strzalki/wsad + kolizja gracz - sciana (rowniez gracz nie moze przekroczyc srodka boiska)
-        if keys[pygame.K_RIGHT] and self.x < screen_width - self.radius - 15:
+        if keys[pygame.K_RIGHT] and self.x < screen_width/2 - self.radius and self.id == 0:
             self.x += speed
-        if keys[pygame.K_LEFT] and self.x > 0 + self.radius + 15:
+        if keys[pygame.K_RIGHT] and self.x < screen_width - self.radius - 15 and self.id == 1:
+            self.x += speed
+        if keys[pygame.K_LEFT] and self.x > 0 + self.radius + 15 and self.id == 0:
             self.x -= speed
-        if keys[pygame.K_DOWN] and self.y < screen_height/2 - self.radius and self.id == 0:
+        if keys[pygame.K_LEFT] and self.x > screen_width/2 + self.radius and self.id == 1:
+            self.x -= speed
+        if keys[pygame.K_DOWN] and self.y < screen_height - self.radius - 15 and self.id == 0:
             self.y += speed
         if keys[pygame.K_DOWN] and self.y < screen_height - self.radius - 15 and self.id == 1:
             self.y += speed
         if keys[pygame.K_UP] and self.y > 0 + self.radius + 15 and self.id == 0:
             self.y -= speed
-        if keys[pygame.K_UP] and self.y > screen_height/2 + self.radius and self.id == 1:
+        if keys[pygame.K_UP] and self.y > 0 + self.radius + 15 and self.id == 1:
             self.y -= speed
 
 class Ball():
@@ -68,10 +72,15 @@ class Ball():
     def move(self, change_direction, speed): # automatic movement
         #test
         if change_direction == 0:
-            self.y += speed
+            self.x += speed
         elif change_direction == 1:
-            self.y -= speed
+            self.x -= speed
 
+    def playerCollision(self, player1, player2):
+        if self.x == player1.x and self.y == player1.y:
+            self.x -= 5
+        if self.x == player2.x and self.y == player2.y:
+            self.x += 5
         #later more directions etc.
 
 class ServerActions: # connecting to server and sending, receiving data
@@ -162,6 +171,7 @@ def main():
 
         player.move(2)
         ball.move(1, 5)
+        ball.playerCollision(player, player2)
 
         # drawing
         screen.blit(bg, (0, 0))
