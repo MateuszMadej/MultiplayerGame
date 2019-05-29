@@ -40,7 +40,7 @@ class Player():
     def move(self, speed): #moving by mouse or keyboard?
         keys = pygame.key.get_pressed()
 
-        #sterowanie strzalki/wsad + kolizja gracz - sciana (rowniez gracz nie moze przekroczyc srodka boiska)
+        #sterowanie strzalki + kolizja gracz - sciana (rowniez gracz nie moze przekroczyc srodka boiska)
         if keys[pygame.K_RIGHT] and self.x < screen_width/2 - self.radius and self.id == 0:
             self.x += speed
         if keys[pygame.K_RIGHT] and self.x < screen_width - self.radius - 15 and self.id == 1:
@@ -64,24 +64,62 @@ class Ball():
         self.y = y
         self.ball_color = ball_color
         self.radius = radius
+        self.speed = 5 #must be also changed in server's ball object
+        self.speed_y = 0
+        self.p1, self.p2 = 0, 0
 
     def draw(self, screen):
         #pygame.draw.circle(screen, self.ball_color, (self.x, self.y), self.radius) #zostawic dla testow kolizji
         screen.blit(puck, (self.x - self.radius, self.y - self.radius))
 
-    def move(self, change_direction, speed): # automatic movement
-        #test
-        if change_direction == 0:
-            self.x += speed
-        elif change_direction == 1:
-            self.x -= speed
+    def move(self, player1, player2): # automatic movement and checking collision
+        #radius player = 25, radius puke = 15
+        #print(player1.id)
 
-    def playerCollision(self, player1, player2):
-        if self.x == player1.x and self.y == player1.y:
-            self.x -= 5
-        if self.x == player2.x and self.y == player2.y:
-            self.x += 5
-        #later more directions etc.
+        self.x += self.speed
+        #self.y += self.speed
+
+        '''
+        #beta puck - player collision - now bugged if move player up or down.. (solution - check testing prints below)
+        if self.x + 45 <= player1.x:
+            if self.y - 5 <= player1.y and self.y + 5 >= player1.y:
+                self.speed *= -1
+                #print("test p1")
+
+        if self.x - 45 >= player2.x:
+            if self.y - 5 <= player2.y and self.y + 5 >= player2.y:
+                self.speed *= -1
+                #print("test p2")
+        '''
+
+        #print(self.y, player1.y)
+        #print(self.speed)
+        print(self.p1, self.p2)
+
+        #puck - bands collision and points counter - all working..
+        if self.x <= 0 + 35: #left band
+            if self.y <= 400 and self.y >= 200:#if hits the goal
+                self.p1 += 1
+                self.x, self.y = 640, 300 #move puck to middle area
+            self.speed *= -1 #and change direction to scorer side
+
+        if self.x >= screen_width - 35: #right band
+            if self.y <= 400 and self.y >= 200:  # if hits the goal
+                self.p2 += 1
+                self.x, self.y = 640, 300 #same as above
+            self.speed *= -1 #same as above
+
+
+        if self.y <= 0 + 30: #upper band
+            self.speed = 0 #now only stop puck
+        if self.y >= screen_height - 30: #lower band
+            self.speed =0 #now only stop puck
+
+    def get_score(self):
+        return self.p1, self.p2
+
+    def draw_score(self): #here or outside this class?
+        pass
 
 class ServerActions: # connecting to server and sending, receiving data
     def __init__(self, port, host):
@@ -107,9 +145,6 @@ class ServerActions: # connecting to server and sending, receiving data
             return pickle.loads(self.client.recv(2048))
         except socket.error as msg:
             print(str(msg[0]))
-
-def collisionPlayerPuck(playerObject, puckObject):
-    pass
 
 def startScreen():
     start = True
@@ -169,20 +204,16 @@ def main():
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 sys.exit(0)
 
-        player.move(2)
-        ball.move(1, 5)
-        ball.playerCollision(player, player2)
+        player.move(3)
+        ball.move(player, player2)
 
         # drawing
         screen.blit(bg, (0, 0))
         player.draw(screen)
         player2.draw(screen)
-        ball.draw(screen) #draw only one ball, ignore 1 of 2 ball objects
+        ball.draw(screen) #draw only one ball, ignore other ball object
         clock.tick(60) #fps
         pygame.display.flip()
-
-        #print("player obj",player)
-        #print("ball obj", ball)
 
 startScreen()
 main()

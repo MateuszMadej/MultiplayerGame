@@ -16,6 +16,9 @@ class Ball():
         self.y = y
         self.ball_color = ball_color
         self.radius = radius
+        self.speed = 5
+        self.speed_y = 0
+        self.p1, self.p2 = 0, 0
 
 host = "localhost" #ip addr here
 port = 8889
