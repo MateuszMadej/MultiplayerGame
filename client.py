@@ -1,4 +1,4 @@
-import pygame, sys, socket, pickle, os, time, random
+import pygame, sys, socket, pickle, os, time, random, math
 from pygame.locals import * #imports additional pygame modules
 
 pygame.init()
@@ -58,6 +58,7 @@ class Player():
         if keys[pygame.K_UP] and self.y > 0 + self.radius + 15 and self.id == 1:
             self.y -= speed
 
+
 class Ball():
     def __init__(self, x, y, ball_color, radius):
         self.x = x
@@ -66,60 +67,133 @@ class Ball():
         self.radius = radius
         self.speed = 5 #must be also changed in server's ball object
         self.speed_y = 0
+        self.size = 60
+        self.vx = 2
+        self.vy = 2
         self.p1, self.p2 = 0, 0
 
     def draw(self, screen):
-        #pygame.draw.circle(screen, self.ball_color, (self.x, self.y), self.radius) #zostawic dla testow kolizji
+        #z = pygame.draw.circle(screen, self.ball_color, (int(self.x), int(self.y)), self.radius) #zostawic dla testow kolizji
         screen.blit(puck, (self.x - self.radius, self.y - self.radius))
 
+    def regX(self, d):
+        self.vx = d
+        return self.vx
+
+    def regY(self, d):
+        self.vy = d
+        return self.vy
+
+    def up(self):
+        self.vy = -2
+        return self.vy
+
+    def down(self):
+        self.vy = 2
+        return self.vy
+
+    def left(self):
+        es1 = 0.243 * -10
+
+        if(es1 >= -4):
+            es1 = -5
+
+        self.vx = es1
+
+        return self.vx
+
+    def right(self):
+        es1 = 0.243 * 10
+
+        if(es1 <= 4):
+            es1 = 5
+
+        self.vx = es1
+
+        return self.vx
+
+
     def move(self, player1, player2): # automatic movement and checking collision
-        #radius player = 25, radius puke = 15
-        #print(player1.id)
+        self.setY(self.getY() + self.vy)
+        self.setX(self.getX() + self.vx)
 
-        self.x += self.speed
-        #self.y += self.speed
-
-        '''
-        #beta puck - player collision - now bugged if move player up or down.. (solution - check testing prints below)
-        if self.x + 45 <= player1.x:
-            if self.y - 5 <= player1.y and self.y + 5 >= player1.y:
-                self.speed *= -1
-                #print("test p1")
-
-        if self.x - 45 >= player2.x:
-            if self.y - 5 <= player2.y and self.y + 5 >= player2.y:
-                self.speed *= -1
-                #print("test p2")
-        '''
-
-        #print(self.y, player1.y)
-        #print(self.speed)
-        print(self.p1, self.p2)
-
-        #puck - bands collision and points counter - all working..
-        if self.x <= 0 + 35: #left band
-            if self.y <= 400 and self.y >= 200:#if hits the goal
-                self.p1 += 1
-                self.x, self.y = 640, 300 #move puck to middle area
-            self.speed *= -1 #and change direction to scorer side
-
-        if self.x >= screen_width - 35: #right band
-            if self.y <= 400 and self.y >= 200:  # if hits the goal
-                self.p2 += 1
-                self.x, self.y = 640, 300 #same as above
-            self.speed *= -1 #same as above
+        if(self.getY() >= screen_height - self.size):
+            self.setY(self.getY() + self.up())
+        elif(self.getY() <= 0):
+            self.setY(self.getY() + self.down())
 
 
-        if self.y <= 0 + 30: #upper band
-            self.speed = 0 #now only stop puck
-        if self.y >= screen_height - 30: #lower band
-            self.speed =0 #now only stop puck
+        if(self.getX() >= screen_width):
+            self.p2+=1
+            self.setY(screen_height/2)
+            self.setX(screen_width/2)
 
-    def get_score(self):
-        return self.p1, self.p2
+            es1 = 0.62 * -3
+            es2 = 0.532 * -3
 
-    def draw_score(self): #here or outside this class?
-        pass
+            if(es1 >= 0):
+                es1 = -1
+            elif(es2 >= 0):
+                es2 = -1
+
+            self.regX(es1)
+            self.regY(es2)
+        elif(self.getX() <= 0):
+            self.p1+=1
+            self.setY(screen_height/2)
+            self.setX(screen_width/2)
+
+            es1 = 0.44 * 3
+            es2 = 0.34 * 3
+
+            if(es1 <= 0):
+                es1 = 1
+            elif(es2 <= 0):
+                es2 = 1
+
+            self.regX(es1)
+            self.regY(es2)
+
+        self.collision(player1, player2)
+
+    def collision(self, player1, player2):
+        if(math.sqrt((player1.x - self.x)**2 + (player1.y - self.y)**2) <= self.radius + player1.radius):
+            es1 = 0.543 * -2
+
+            if(es1 >=0):
+                es1 = -1
+
+            self.setX(self.getX() + self.right())
+            self.setY(self.getY() + es1)
+        elif(math.sqrt((player2.x - self.x)**2 + (player2.y - self.y)**2) <= self.radius + player2.radius):
+            es2 = 0.543 * 2
+
+            if(es2 <= 0):
+                es2 = 1
+
+            self.setX(self.getX() + self.left())
+            self.setY(self.getY() + es2)
+
+
+    def getY(self):
+        return self.y
+
+    def setY(self, ay):
+        self.y = ay
+
+    def getX(self):
+        return self.x
+
+    def setX(self, ax):
+        self.x = ax
+
+
+    def getPoints(self):
+        message_to_screen(str(self.p1), (0,0,205), 265, "medium")
+        message_to_screen(str(self.p2), (0,128,0), -265, "medium")
+        pygame.display.update()
+
+
 
 class ServerActions: # connecting to server and sending, receiving data
     def __init__(self, port, host):
@@ -206,6 +280,8 @@ def main():
 
         player.move(3)
         ball.move(player, player2)
+        ball.getPoints()
+
 
         # drawing
         screen.blit(bg, (0, 0))
