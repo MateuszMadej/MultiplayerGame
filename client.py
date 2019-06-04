@@ -65,16 +65,17 @@ class Ball():
         self.y = y
         self.ball_color = ball_color
         self.radius = radius
-        self.speed = 5 #must be also changed in server's ball object
+        self.speed = 10 #must be also changed in server's ball object
         self.speed_y = 0
         self.size = 60
-        self.vx = 2
+        self.vx = 5
         self.vy = 2
         self.p1, self.p2 = 0, 0
 
     def draw(self, screen):
         #z = pygame.draw.circle(screen, self.ball_color, (int(self.x), int(self.y)), self.radius) #zostawic dla testow kolizji
         screen.blit(puck, (self.x - self.radius, self.y - self.radius))
+        self.getPoints() #draw points do screen
 
     def regX(self, d):
         self.vx = d
@@ -117,13 +118,20 @@ class Ball():
         self.setY(self.getY() + self.vy)
         self.setX(self.getX() + self.vx)
 
-        if(self.getY() >= screen_height - self.size):
+        if(self.getY() >= screen_height - self.size +30):
             self.setY(self.getY() + self.up())
-        elif(self.getY() <= 0):
+        elif(self.getY() <= 30):
             self.setY(self.getY() + self.down())
 
+        elif(self.getX() < 30 and (self.getY() < 200 or self.getY() > 400)):
+            print("lewatest")
+            self.setX(self.getX() + self.right())
+        elif(self.getX() >= screen_width - 30 and (self.getY() < 200 or self.getY() > 400)):
+            print("prawatest")
+            self.setX(self.getX() + self.left())
 
-        if(self.getX() >= screen_width):
+
+        if(self.getX() >= screen_width and self.getY() > 200 and self.getY() < 400):
             self.p2+=1
             self.setY(screen_height/2)
             self.setX(screen_width/2)
@@ -138,7 +146,8 @@ class Ball():
 
             self.regX(es1)
             self.regY(es2)
-        elif(self.getX() <= 0):
+
+        elif(self.getX() <= 0 and self.getY() > 200 and self.getY() < 400):
             self.p1+=1
             self.setY(screen_height/2)
             self.setX(screen_width/2)
@@ -174,7 +183,6 @@ class Ball():
             self.setX(self.getX() + self.left())
             self.setY(self.getY() + es2)
 
-
     def getY(self):
         return self.y
 
@@ -187,11 +195,10 @@ class Ball():
     def setX(self, ax):
         self.x = ax
 
-
-    def getPoints(self):
+    def getPoints(self): #draw message to screen
         message_to_screen(str(self.p1), (0,0,205), 265, "medium")
         message_to_screen(str(self.p2), (0,128,0), -265, "medium")
-        pygame.display.update()
+        #pygame.display.update()
 
 
 
@@ -282,13 +289,12 @@ def main():
         ball.move(player, player2)
         ball.getPoints()
 
-
         # drawing
         screen.blit(bg, (0, 0))
         player.draw(screen)
         player2.draw(screen)
         ball.draw(screen) #draw only one ball, ignore other ball object
-        clock.tick(60) #fps
+        clock.tick(120) #fps
         pygame.display.flip()
 
 startScreen()
